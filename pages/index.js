@@ -3,10 +3,13 @@ import { useEffect, useState } from 'react';
 
 export default function Home() {
 
-  const [items, setItems] = useState([])
+  const [items, setItems] = useState()
+  const [win, setWin] = useState(false)
+  const [startTime] = useState(Date.now())
+  const [finishTime, setFinishTime] = useState('')
 
   useEffect(() => {
-    if (!items.length) {
+    if (!items) {
       setItems(getRandom())
     }
   }, [items])
@@ -22,7 +25,8 @@ export default function Home() {
     return [...randomized, '']
   }
 
-  const move = (value) => {
+  const move = (event) => {
+    const value = +event.target.textContent
     const index = items.findIndex(el => el === value)
     const emptyIndex =
       items[index + 1] === '' ? index + 1 :
@@ -30,13 +34,19 @@ export default function Home() {
       items[index + 4] === '' ? index + 4 :
       items[index - 4] === '' ? index - 4 : -1
     if (emptyIndex >= 0) {
-      setItems(items => moveElems(items, index, emptyIndex));
+      setItems(moveElems(index, emptyIndex));
     }
   }
   
-  const moveElems = (arr, one, two) => {
+  const moveElems = (one, two) => {
+    const arr = items.map(el => el)
     arr[one] = [arr[two], arr[two] = arr[one]][0];
-    console.log(arr)
+    if (arr.every((el, index) => {
+      return +el === index + 1 || index === 15
+    })) {
+      setFinishTime(Date.now())
+      setWin(true)
+    }
     return arr
   }
 
@@ -56,19 +66,24 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.grid}>
-        {
-          items.map((el) =>
-            <div
+      <div className={styles.grid} onClick={!win ? (event) => {move(event)} : null}>
+        { items &&
+          items.map((el) => {
+            return <div
               key={el}
               className={!el ? styles.grid__null : styles.grid__item}
-              onClick={() => { move(el) }}
             >
               {el}
             </div>
-          )
+          })
         }
       </div>
+      {win && 
+        <>
+          <div className={styles.grid__text}>Win! Refresh the page to start new game</div>
+          <div className={styles.grid__text}>{`Your time: ${(finishTime - startTime) / 1000} s`}</div>
+        </>
+      }
     </div>
   )
 }
